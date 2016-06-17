@@ -96,7 +96,7 @@ class Certificate {
         $this->csrKeyFilename = $csrKeyFilename;
         return $this;
     }
-    
+
     function getLicenseFileName() {
         return $this->licenseFileName;
     }
@@ -106,7 +106,6 @@ class Certificate {
         return $this;
     }
 
-    
     /* DN Definitions */
 
     public function setCountryName($countryName) {
@@ -165,14 +164,13 @@ class Certificate {
         if (empty($this->csrKeyFilename)) {
             $this->csrKeyFilename = $this->pathFile . 'csr.key';
         }
-        
+
         if (empty($this->licenseFileName)) {
             $this->licenseFileName = $this->pathFile . 'license.sig';
         }
 
         if ($this->validateDn($dn)) {
 
-            $this->privateKey = openssl_pkey_new();
 
             $config = array(
                 "digest_alg" => $this->digestAlg,
@@ -180,8 +178,15 @@ class Certificate {
                 "private_key_type" => $this->keyType
             );
 
-            // Generate a certificate signing request
-            $this->csrkey = openssl_csr_new($dn, $this->privateKey, $config);
+            $this->privateKey = openssl_pkey_new($config);
+
+            try {
+                // Generate a certificate signing request
+                $this->csrkey = openssl_csr_new($dn, $this->privateKey, $config);
+            } catch (\Exception $exc) {
+                throw new \Exception('Erro in Generate a certificate signing request.' . - $exc->getMessage());
+            }
+
 
             // You will usually want to create a self-signed certificate at this
             // point until your CA fulfills your request.
@@ -230,9 +235,9 @@ class Certificate {
     private function genPublicKeyFile() {
         openssl_x509_export_to_file($this->publicKey, $this->publicKeyFileName);
     }
-    
+
     private function genLicenseFile($domain = null) {
-        
+
         $sourceArrayCert = openssl_x509_parse($this->publicKey);
         $sourceArray = Array(
             'domain' => ((!empty($domain)) ? $domain : $sourceArrayCert['subject']['CN']),
@@ -242,7 +247,7 @@ class Certificate {
             'country' => $sourceArrayCert['subject']['C']
         );
         $sourceJson = json_encode($sourceArray);
-        
+
         try {
             $encripted = null;
             openssl_private_encrypt($sourceJson, $encripted, $this->privateKey);
@@ -252,7 +257,7 @@ class Certificate {
 
         file_put_contents($this->licenseFileName, base64_encode($encripted));
     }
-    
+
     public function getLicenseData($publicFilePem = null, $publicFileSig = null) {
         if (empty($publicFilePem)) {
             throw new \Exception('Nenhuma chave publica definida!', 500);
@@ -261,24 +266,24 @@ class Certificate {
         if (!is_file($publicFilePem)) {
             throw new \Exception('Arquivo de chave publica não existe!', 500);
         }
-        
+
         if (empty($publicFileSig)) {
             throw new \Exception('Nenhum arquivo de licença definido!', 500);
         }
-        
+
         if (!is_file($publicFileSig)) {
             throw new \Exception('Arquivo de licença não existe!', 500);
         }
-        
+
         $license = file_get_contents($publicFileSig);
-        
+
         $publicKey = file_get_contents($publicFilePem);
         $pubKey = openssl_pkey_get_public($publicKey);
-        
+
         $decripted = '';
         openssl_public_decrypt(base64_decode($license), $decripted, $pubKey);
-        
-        
+
+
         return json_decode($decripted, true);
     }
 
@@ -343,21 +348,21 @@ class Certificate {
 
         $data = $this->parsePublicKey($publicFilePem);
         $diff = $data['validTo_time_t'] - $timestamp;
-                
-        if($diff < 0){
+
+        if ($diff < 0) {
             return true;
         } else {
             return false;
         }
     }
-    
+
     public function getDaysToExpire($publicFilePem = null) {
         $timestamp = strtotime(date('Y-m-d H:i:s'));
 
         $data = $this->parsePublicKey($publicFilePem);
         $diferenca = $data['validTo_time_t'] - $timestamp;
-        
-        return ((int)floor( $diferenca / (60 * 60 * 24))); 
+
+        return ((int) floor($diferenca / (60 * 60 * 24)));
     }
 
     /**
@@ -379,7 +384,7 @@ class Certificate {
         $data = $this->parsePublicKey($publicFilePem);
         return date('Y-m-d H:i:s', $data['validFrom_time_t']);
     }
-    
+
     /**
      * Compara o certificado de Chave Publica com a Chave Privada
      * @param string $publicCertFilePem
@@ -395,7 +400,7 @@ class Certificate {
         if (!is_file($publicCertFilePem)) {
             throw new \Exception('Arquivo de chave publica não existe!', 500);
         }
-        
+
         if (empty($privateCertFileKey)) {
             throw new \Exception('Nenhuma chave privada definida!', 500);
         }
@@ -403,12 +408,12 @@ class Certificate {
         if (!is_file($privateCertFileKey)) {
             throw new \Exception('Arquivo de chave privada não existe!', 500);
         }
-                
+
         $key = openssl_pkey_get_private(file_get_contents($privateCertFileKey));
         $x509_res = openssl_x509_read(file_get_contents($publicCertFilePem));
         return openssl_x509_check_private_key($x509_res, $key);
     }
-    
+
     public function compareKeys($pubkey = null, $privateCertFileKey = null) {
         if (empty($pubkey)) {
             throw new \Exception('Nenhuma chave publica definida!', 500);
@@ -417,7 +422,7 @@ class Certificate {
         if (!is_file($pubkey)) {
             throw new \Exception('Arquivo de chave publica não existe!', 500);
         }
-        
+
         if (empty($privateCertFileKey)) {
             throw new \Exception('Nenhuma chave privada definida!', 500);
         }
@@ -425,15 +430,15 @@ class Certificate {
         if (!is_file($privateCertFileKey)) {
             throw new \Exception('Arquivo de chave privada não existe!', 500);
         }
-        
+
         $key = openssl_pkey_get_private(file_get_contents($privateCertFileKey));
         $details = openssl_pkey_get_details($key);
-        
-        
+
+
         $sPubKey = file_get_contents($pubkey);
         $sPrivKey = $details['key'];
-                
-        if(strcmp($sPubKey, $sPrivKey) == 0){
+
+        if (strcmp($sPubKey, $sPrivKey) == 0) {
             return true;
         } else {
             return false;
