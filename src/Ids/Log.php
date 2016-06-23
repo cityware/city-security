@@ -2,8 +2,8 @@
 
 namespace Cityware\Security\Ids;
 
-abstract class Log
-{
+abstract class Log {
+
     protected $logger = null;
     protected $resource = null;
 
@@ -30,8 +30,7 @@ abstract class Log
      *
      * @param object $connectString Connection string to logger instance
      */
-    public function __construct($connectString = null)
-    {
+    public function __construct($connectString = null) {
         if ($connectString !== null) {
             $this->connect($connectString);
         }
@@ -42,8 +41,7 @@ abstract class Log
      *
      * @param object $logger Logger instance
      */
-    public function setLogger($logger)
-    {
+    public function setLogger($logger) {
         $this->logger = $logger;
     }
 
@@ -52,8 +50,7 @@ abstract class Log
      *
      * @return object Logger instance
      */
-    public function getLogger()
-    {
+    public function getLogger() {
         return $this->logger;
     }
 
