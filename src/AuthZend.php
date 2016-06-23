@@ -20,10 +20,9 @@ use Cityware\Security;
  *
  * @author fabricio.xavier
  */
-class AuthZend extends AuthAdapter implements AdapterInterface
-{
+class AuthZend extends AuthAdapter implements AdapterInterface {
+
     private $returnColumns;
-    
     private $whereConditions;
 
     /**
@@ -35,14 +34,13 @@ class AuthZend extends AuthAdapter implements AdapterInterface
      * @param  string                               $credentialTreatment Optional
      * @return \Zend\Authentication\Adapter\DbTable
      */
-    public function __construct($tableName = null, $schemaName = null, $identityColumn = null, $credentialColumn = null, array $returnColumns = null, array $whereConditions = null)
-    {
-        
+    public function __construct($tableName = null, $schemaName = null, $identityColumn = null, $credentialColumn = null, array $returnColumns = null, array $whereConditions = null) {
+
         $this->clearIdentity();
-                
+
         $zendDb = \Cityware\Db\Factory::factory();
         $this->zendDb = $zendDb->getAdapter();
-        
+
         parent::__construct($this->zendDb);
 
         if (null !== $tableName) {
@@ -62,12 +60,11 @@ class AuthZend extends AuthAdapter implements AdapterInterface
         }
 
         $this->returnColumns = $returnColumns;
-        
+
         $this->whereConditions = $whereConditions;
     }
 
-    public function clearIdentity()
-    {
+    public function clearIdentity() {
         $auth = new AuthenticationService();
         $auth->clearIdentity();
     }
@@ -77,10 +74,8 @@ class AuthZend extends AuthAdapter implements AdapterInterface
      *
      * @return \Zend\Authentication\Result
      * @throws \Zend\Authentication\Adapter\Exception\ExceptionInterface
-     *                                                                   If authentication cannot be performed
      */
-    public function authenticate()
-    {
+    public function authenticate() {
         /* Anti Injection de login */
         $login1 = Security\AntiInjection::antiSqlInjection1($this->getIdentity());
         $login2 = Security\AntiInjection::antiSqlInjection2($login1);
@@ -100,13 +95,12 @@ class AuthZend extends AuthAdapter implements AdapterInterface
 
         //Faz inner join dos dados do perfil no SELECT do Auth_Adapter
         $select = $this->getDbSelect();
-        
-        if(!empty($this->whereConditions)){
+
+        if (!empty($this->whereConditions)) {
             foreach ($this->whereConditions as $valueWhereConditions) {
                 $select->where($valueWhereConditions);
             }
         }
-        
 
         //Efetua o login
         $result = parent::authenticate();
