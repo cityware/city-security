@@ -20,9 +20,11 @@ use Cityware\Security;
  *
  * @author fabricio.xavier
  */
-class AuthAdapterZend extends AuthAdapter implements AdapterInterface
+class AuthZend extends AuthAdapter implements AdapterInterface
 {
     private $returnColumns;
+    
+    private $whereConditions;
 
     /**
      * __construct() - Sets configuration options
@@ -33,7 +35,7 @@ class AuthAdapterZend extends AuthAdapter implements AdapterInterface
      * @param  string                               $credentialTreatment Optional
      * @return \Zend\Authentication\Adapter\DbTable
      */
-    public function __construct($tableName = null, $schemaName = null, $identityColumn = null, $credentialColumn = null, array $returnColumns = null)
+    public function __construct($tableName = null, $schemaName = null, $identityColumn = null, $credentialColumn = null, array $returnColumns = null, array $whereConditions = null)
     {
         
         $this->clearIdentity();
@@ -60,6 +62,8 @@ class AuthAdapterZend extends AuthAdapter implements AdapterInterface
         }
 
         $this->returnColumns = $returnColumns;
+        
+        $this->whereConditions = $whereConditions;
     }
 
     public function clearIdentity()
@@ -96,7 +100,13 @@ class AuthAdapterZend extends AuthAdapter implements AdapterInterface
 
         //Faz inner join dos dados do perfil no SELECT do Auth_Adapter
         $select = $this->getDbSelect();
-        $select->where("ind_status = 'A'");
+        
+        if(!empty($this->whereConditions)){
+            foreach ($this->whereConditions as $valueWhereConditions) {
+                $select->where($valueWhereConditions);
+            }
+        }
+        
 
         //Efetua o login
         $result = parent::authenticate();
